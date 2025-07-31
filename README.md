@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Django Job Portal
 
 A comprehensive job portal web application built with Django 5.1.3 featuring complete user authentication, role-based access control, and modern responsive design.
