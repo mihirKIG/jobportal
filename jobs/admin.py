@@ -8,8 +8,8 @@ class ProfileInline(admin.StackedInline):
     model = Profile
     can_delete = False
     verbose_name_plural = 'Profile Information'
-    fields = ('role', 'phone', 'address', 'created_at')
-    readonly_fields = ('created_at',)
+    fields = ('role', 'phone', 'address')
+    readonly_fields = ()
 
 # Extended User Admin
 class UserAdmin(BaseUserAdmin):
@@ -33,11 +33,11 @@ admin.site.register(User, UserAdmin)
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'role', 'phone', 'user_email', 'created_at')
-    list_filter = ('role', 'created_at')
+    list_display = ('user', 'role', 'phone', 'user_email')
+    list_filter = ('role',)
     search_fields = ('user__username', 'user__email', 'phone')
-    ordering = ('-created_at',)
-    readonly_fields = ('created_at',)
+    ordering = ('user__username',)
+    readonly_fields = ()
     
     def user_email(self, obj):
         return obj.user.email
@@ -58,11 +58,12 @@ class JobAdmin(admin.ModelAdmin):
 
 @admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
-    list_display = ('job', 'applicant', 'applicant_email', 'applicant_phone', 'applied_at')
-    list_filter = ('applied_at', 'job__company_name')
+    list_display = ('job', 'applicant', 'applicant_email', 'status', 'applied_at', 'updated_at')
+    list_filter = ('status', 'applied_at', 'job__company_name')
     search_fields = ('job__title', 'applicant__username', 'applicant__email')
     ordering = ('-applied_at',)
-    readonly_fields = ('applied_at',)
+    readonly_fields = ('applied_at', 'updated_at')
+    list_editable = ('status',)
     
     def applicant_email(self, obj):
         return obj.applicant.email

@@ -1,19 +1,238 @@
 {% extends 'jobs/base.html' %}
 {% block content %}
-<h2>Applicants for {{ job.title }}</h2>
-<ul>
-    {% for application in applications %}
-    <li>
-        {{ application.applicant.username }} -
-        <a href="{{ application.resume.url }}">Resume</a>
-        <br>
-        Cover Letter: {{ application.cover_letter }}
-        <br>
-        Applied at: {{ application.applied_at|date:"Y-m-d H:i" }}
-    </li>
-    {% empty %}
-    <li>No applicants yet.</li>
-    {% endfor %}
-</ul>
-<a href="{% url 'employer_dashboard' %}">Back to Dashboard</a>
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="text-primary">
+                <i class="fa-solid fa-users"></i> Applications for "{{ job.title }}"
+            </h2>
+            <p class="text-muted mb-0">
+                <i class="fa-solid fa-building"></i> {{ job.company_name }} 
+                <span class="mx-2">|</span>
+                <i class="fa-solid fa-location-dot"></i> {{ job.location }}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'employer_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center bg-primary text-white">
+                <div class="card-body">
+                    <h3 class="card-title">{{ stats.total }}</h3>
+                    <p class="card-text">Total Applications</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-warning text-white">
+                <div class="card-body">
+                    <h3 class="card-title">{{ stats.pending }}</h3>
+                    <p class="card-text">Pending Review</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h3 class="card-title">{{ stats.approved }}</h3>
+                    <p class="card-text">Approved</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-danger text-white">
+                <div class="card-body">
+                    <h3 class="card-title">{{ stats.rejected }}</h3>
+                    <p class="card-text">Rejected</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Applications List -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="fa-solid fa-list"></i> All Applications ({{ stats.total }})
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            {% if applications %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Applicant</th>
+                                <th>Contact</th>
+                                <th>Resume</th>
+                                <th>Cover Letter</th>
+                                <th>Status</th>
+                                <th>Applied Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for application in applications %}
+                            <tr class="{% if application.status == 'approved' %}table-success{% elif application.status == 'rejected' %}table-danger{% endif %}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-primary text-white me-3">
+                                            {{ application.applicant.first_name.0|default:application.applicant.username.0 }}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">
+                                                {{ application.applicant.first_name }} {{ application.applicant.last_name }}
+                                            </h6>
+                                            <small class="text-muted">@{{ application.applicant.username }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <small class="d-block">
+                                            <i class="fa-solid fa-envelope"></i> {{ application.applicant.email }}
+                                        </small>
+                                        {% if application.applicant.profile.phone %}
+                                        <small class="d-block text-muted">
+                                            <i class="fa-solid fa-phone"></i> {{ application.applicant.profile.phone }}
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if application.resume %}
+                                        <a href="{{ application.resume.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="fa-solid fa-download"></i> Download
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">No Resume</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="cover-letter-preview">
+                                        {{ application.cover_letter|truncatewords:15 }}
+                                        {% if application.cover_letter|wordcount > 15 %}
+                                            <button class="btn btn-sm btn-link p-0" data-bs-toggle="modal" data-bs-target="#coverLetterModal{{ application.id }}">
+                                                Read more...
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if application.status == 'pending' %}
+                                        <span class="badge bg-warning">
+                                            <i class="fa-solid fa-clock"></i> Pending
+                                        </span>
+                                    {% elif application.status == 'approved' %}
+                                        <span class="badge bg-success">
+                                            <i class="fa-solid fa-check"></i> Approved
+                                        </span>
+                                    {% elif application.status == 'rejected' %}
+                                        <span class="badge bg-danger">
+                                            <i class="fa-solid fa-times"></i> Rejected
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ application.applied_at|date:"M d, Y" }}</small><br>
+                                    <small class="text-muted">{{ application.applied_at|time:"H:i" }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        {% if application.status != 'approved' %}
+                                            <a href="{% url 'update_application_status' application.id 'approved' %}" 
+                                               class="btn btn-sm btn-success" 
+                                               onclick="return confirm('Are you sure you want to approve this application?')">
+                                                <i class="fa-solid fa-check"></i> Approve
+                                            </a>
+                                        {% endif %}
+                                        {% if application.status != 'rejected' %}
+                                            <a href="{% url 'update_application_status' application.id 'rejected' %}" 
+                                               class="btn btn-sm btn-danger" 
+                                               onclick="return confirm('Are you sure you want to reject this application?')">
+                                                <i class="fa-solid fa-times"></i> Reject
+                                            </a>
+                                        {% endif %}
+                                        {% if application.status != 'pending' %}
+                                            <a href="{% url 'update_application_status' application.id 'pending' %}" 
+                                               class="btn btn-sm btn-warning" 
+                                               onclick="return confirm('Are you sure you want to mark this as pending?')">
+                                                <i class="fa-solid fa-clock"></i> Pending
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Cover Letter Modal -->
+                            <div class="modal fade" id="coverLetterModal{{ application.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Cover Letter - {{ application.applicant.first_name }} {{ application.applicant.last_name }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>{{ application.cover_letter|linebreaks }}</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fa-solid fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Applications Yet</h5>
+                    <p class="text-muted">When people apply for this job, their applications will appear here.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.cover-letter-preview {
+    max-width: 200px;
+}
+
+.table th {
+    border-top: none;
+}
+
+.btn-group .btn {
+    margin-right: 2px;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+</style>
 {% endblock %}

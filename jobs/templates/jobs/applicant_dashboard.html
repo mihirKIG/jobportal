@@ -2,6 +2,7 @@
 {% block content %}
 <div class="row">
     <div class="col-md-12">
+        <!-- Welcome Section -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-info text-white">
                 <h2 class="mb-0"><i class="fa-solid fa-user"></i> Welcome, {{ user.username }}!</h2>
@@ -9,36 +10,83 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <div class="card border-primary">
                             <div class="card-body text-center">
                                 <h5 class="card-title">
-                                    <i class="fa-solid fa-file-alt text-primary"></i> My Applications
+                                    <i class="fa-solid fa-file-alt text-primary"></i> All Applications
                                 </h5>
-                                <h3 class="text-primary">{{ applications.count }}</h3>
-                                <p class="card-text">Total applications submitted</p>
+                                <h3 class="text-primary">{{ stats.all|default:0 }}</h3>
+                                <p class="card-text">Total submitted</p>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-3">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">
+                                    <i class="fa-solid fa-clock text-warning"></i> Pending
+                                </h5>
+                                <h3 class="text-warning">{{ stats.pending|default:0 }}</h3>
+                                <p class="card-text">Under review</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <div class="card border-success">
                             <div class="card-body text-center">
                                 <h5 class="card-title">
-                                    <i class="fa-solid fa-briefcase text-success"></i> Available Jobs
+                                    <i class="fa-solid fa-check text-success"></i> Approved
                                 </h5>
-                                <a href="{% url 'job_list' %}" class="btn btn-success">
-                                    <i class="fa-solid fa-search"></i> Browse Jobs
-                                </a>
+                                <h3 class="text-success">{{ stats.approved|default:0 }}</h3>
+                                <p class="card-text">Applications accepted</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-danger">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">
+                                    <i class="fa-solid fa-times text-danger"></i> Rejected
+                                </h5>
+                                <h3 class="text-danger">{{ stats.rejected|default:0 }}</h3>
+                                <p class="card-text">Applications declined</p>
                             </div>
                         </div>
                     </div>
                 </div>
+                <div class="text-center mt-3">
+                    <a href="{% url 'job_list' %}" class="btn btn-success">
+                        <i class="fa-solid fa-search"></i> Browse More Jobs
+                    </a>
+                </div>
             </div>
         </div>
 
+        <!-- Applications Section -->
         <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h3 class="mb-0"><i class="fa-solid fa-history"></i> Your Applications</h3>
+                
+                <!-- Status Filter Buttons -->
+                <div class="btn-group" role="group">
+                    <a href="{% url 'applicant_dashboard' %}?status=all" 
+                       class="btn btn-sm {% if current_filter == 'all' %}btn-light{% else %}btn-outline-light{% endif %}">
+                        All ({{ stats.all|default:0 }})
+                    </a>
+                    <a href="{% url 'applicant_dashboard' %}?status=pending" 
+                       class="btn btn-sm {% if current_filter == 'pending' %}btn-warning{% else %}btn-outline-light{% endif %}">
+                        Pending ({{ stats.pending|default:0 }})
+                    </a>
+                    <a href="{% url 'applicant_dashboard' %}?status=approved" 
+                       class="btn btn-sm {% if current_filter == 'approved' %}btn-success{% else %}btn-outline-light{% endif %}">
+                        Approved ({{ stats.approved|default:0 }})
+                    </a>
+                    <a href="{% url 'applicant_dashboard' %}?status=rejected" 
+                       class="btn btn-sm {% if current_filter == 'rejected' %}btn-danger{% else %}btn-outline-light{% endif %}">
+                        Rejected ({{ stats.rejected|default:0 }})
+                    </a>
+                </div>
             </div>
             <div class="card-body">
                 {% if applications %}
@@ -49,6 +97,7 @@
                                     <th>Job Title</th>
                                     <th>Company</th>
                                     <th>Location</th>
+                                    <th>Status</th>
                                     <th>Applied Date</th>
                                     <th>Resume</th>
                                     <th>Action</th>
@@ -56,7 +105,7 @@
                             </thead>
                             <tbody>
                                 {% for app in applications %}
-                                <tr>
+                                <tr class="{% if app.status == 'approved' %}table-success{% elif app.status == 'rejected' %}table-danger{% endif %}">
                                     <td>
                                         <strong>{{ app.job.title }}</strong>
                                     </td>
@@ -64,10 +113,28 @@
                                     <td>
                                         <i class="fa-solid fa-map-marker-alt"></i> {{ app.job.location }}
                                     </td>
-                                    <td>{{ app.applied_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if app.status == 'pending' %}
+                                            <span class="badge bg-warning">
+                                                <i class="fa-solid fa-clock"></i> Pending
+                                            </span>
+                                        {% elif app.status == 'approved' %}
+                                            <span class="badge bg-success">
+                                                <i class="fa-solid fa-check"></i> Approved
+                                            </span>
+                                        {% elif app.status == 'rejected' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fa-solid fa-times"></i> Rejected
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>{{ app.applied_at|date:"M d, Y" }}</small><br>
+                                        <small class="text-muted">{{ app.applied_at|time:"H:i" }}</small>
+                                    </td>
                                     <td>
                                         {% if app.resume %}
-                                            <a href="{{ app.resume.url }}" class="btn btn-sm btn-outline-primary">
+                                            <a href="{{ app.resume.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
                                                 <i class="fa-solid fa-download"></i> Download
                                             </a>
                                         {% else %}
@@ -87,15 +154,44 @@
                 {% else %}
                     <div class="text-center py-5">
                         <i class="fa-solid fa-inbox fa-3x text-muted mb-3"></i>
-                        <h4 class="text-muted">No applications submitted yet</h4>
-                        <p class="text-muted">Start applying for jobs to see your applications here.</p>
-                        <a href="{% url 'job_list' %}" class="btn btn-primary">
-                            <i class="fa-solid fa-search"></i> Browse Available Jobs
-                        </a>
+                        {% if current_filter == 'all' %}
+                            <h4 class="text-muted">No applications submitted yet</h4>
+                            <p class="text-muted">Start applying for jobs to see your applications here.</p>
+                            <a href="{% url 'job_list' %}" class="btn btn-primary">
+                                <i class="fa-solid fa-search"></i> Browse Available Jobs
+                            </a>
+                        {% else %}
+                            <h4 class="text-muted">No {{ current_filter }} applications</h4>
+                            <p class="text-muted">You don't have any {{ current_filter }} applications at the moment.</p>
+                        {% endif %}
                     </div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.table-success {
+    background-color: rgba(25, 135, 84, 0.1);
+}
+
+.table-danger {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.btn-group .btn {
+    border-radius: 0;
+}
+
+.btn-group .btn:first-child {
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+}
+
+.btn-group .btn:last-child {
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+}
+</style>
 {% endblock %}

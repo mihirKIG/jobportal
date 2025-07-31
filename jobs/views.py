@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
+from django.http import JsonResponse
 from datetime import datetime, timedelta
 from .models import Job, Application, Profile
 from .forms import UserRegistrationForm, LoginForm, JobForm, ApplicationForm
@@ -80,13 +81,37 @@ def employer_dashboard(request):
 
 @login_required
 def applicant_dashboard(request):
+    """Enhanced applicant dashboard with status filtering"""
     profile, created = Profile.objects.get_or_create(
         user=request.user,
         defaults={'role': 'applicant'}
     )
     
-    applications = Application.objects.filter(applicant=request.user).order_by('-applied_at')
-    return render(request, 'jobs/applicant_dashboard.html', {'applications': applications})
+    # Get filter parameter
+    status_filter = request.GET.get('status', 'all')
+    
+    # Get applications based on filter
+    applications = Application.objects.filter(applicant=request.user)
+    
+    if status_filter != 'all':
+        applications = applications.filter(status=status_filter)
+    
+    applications = applications.order_by('-applied_at')
+    
+    # Calculate statistics
+    all_applications = Application.objects.filter(applicant=request.user)
+    stats = {
+        'all': all_applications.count(),
+        'pending': all_applications.filter(status='pending').count(),
+        'approved': all_applications.filter(status='approved').count(),
+        'rejected': all_applications.filter(status='rejected').count()
+    }
+    
+    return render(request, 'jobs/applicant_dashboard.html', {
+        'applications': applications,
+        'stats': stats,
+        'current_filter': status_filter
+    })
 
 @login_required
 def post_job(request):
@@ -171,3 +196,69 @@ def apply_job(request, pk):
         form = ApplicationForm()
     
     return render(request, 'jobs/apply_job.html', {'form': form, 'job': job})
+
+@login_required
+def job_applications(request, pk):
+    """View for employers to see all applications for a specific job they posted"""
+    job = get_object_or_404(Job, pk=pk, posted_by=request.user)
+    
+    # Ensure user is an employer
+    profile, created = Profile.objects.get_or_create(
+        user=request.user,
+        defaults={'role': 'employer'}
+    )
+    
+    if profile.role != 'employer':
+        messages.error(request, 'Access denied. You are not an employer.')
+        return redirect('job_list')
+    
+    # Get all applications for this job
+    applications = Application.objects.filter(job=job).order_by('-applied_at')
+    
+    # Calculate statistics
+    total_applications = applications.count()
+    pending_count = applications.filter(status='pending').count()
+    approved_count = applications.filter(status='approved').count()
+    rejected_count = applications.filter(status='rejected').count()
+    
+    stats = {
+        'total': total_applications,
+        'pending': pending_count,
+        'approved': approved_count,
+        'rejected': rejected_count
+    }
+    
+    return render(request, 'jobs/job_applicants.html', {
+        'job': job,
+        'applications': applications,
+        'stats': stats
+    })
+
+@login_required
+def update_application_status(request, pk, status):
+    """Update application status (approve/reject)"""
+    application = get_object_or_404(Application, pk=pk)
+    
+    # Ensure the user is the employer who posted the job
+    if application.job.posted_by != request.user:
+        messages.error(request, 'You can only update applications for your own job postings.')
+        return redirect('employer_dashboard')
+    
+    # Ensure status is valid
+    if status not in ['approved', 'rejected', 'pending']:
+        messages.error(request, 'Invalid status.')
+        return redirect('job_applications', pk=application.job.pk)
+    
+    # Update the status
+    old_status = application.status
+    application.status = status
+    application.save()
+    
+    # Success message
+    applicant_name = f"{application.applicant.first_name} {application.applicant.last_name}".strip()
+    if not applicant_name:
+        applicant_name = application.applicant.username
+    
+    messages.success(request, f'Application from {applicant_name} has been {status}.')
+    
+    return redirect('job_applications', pk=application.job.pk)
