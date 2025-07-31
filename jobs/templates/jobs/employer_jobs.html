@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Posted Jobs</title>
+</head>
+<body>
+    <h1>Your Posted Jobs</h1>
+    <ul>
+        {% for job in jobs %}
+        <li>
+            <a href="{% url 'job_applicants' job.pk %}">{{ job.title }}</a> at {{ job.company_name }} ({{ job.location }})
+        </li>
+        {% empty %}
+        <li>You have not posted any jobs.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

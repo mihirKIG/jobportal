@@ -1,0 +1,64 @@
+{% extends 'jobs/base.ht                        <h5><i class="fa-solid fa-chart-bar"></i> Account Statistics</h5>
+                        {% if user.profile.role == 'employer' %}
+                            <p><strong>Jobs Posted:</strong> {{ user.posted_jobs.count }}</p>
+                            <p><strong>Total Applications:</strong> {{ total_applications|default:0 }}</p>
+                        {% else %}
+                            <p><strong>Applications Submitted:</strong> {{ user.applications.count }}</p>
+                        {% endif %} block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0"><i class="fa-solid fa-user"></i> My Profile</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5><i class="fa-solid fa-info-circle"></i> Personal Information</h5>
+                        <p><strong>Username:</strong> {{ user.username }}</p>
+                        <p><strong>Email:</strong> {{ user.email|default:"Not provided" }}</p>
+                        <p><strong>First Name:</strong> {{ user.first_name|default:"Not provided" }}</p>
+                        <p><strong>Last Name:</strong> {{ user.last_name|default:"Not provided" }}</p>
+                        <p><strong>Role:</strong> 
+                            <span class="badge {% if user.profile.role == 'employer' %}bg-success{% else %}bg-info{% endif %}">
+                                {{ user.profile.get_role_display }}
+                            </span>
+                        </p>
+                        <p><strong>Member Since:</strong> {{ user.date_joined|date:"F d, Y" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5><i class="fa-solid fa-chart-bar"></i> Account Statistics</h5>
+                        {% if user.profile.role == 'employer' %}
+                            <p><strong>Jobs Posted:</strong> {{ user.posted_jobs.count }}</p>
+                            <p><strong>Total Applications:</strong> 
+                                {% load custom_tags %}
+                                {{ user|total_applications }}
+                            </p>
+                        {% else %}
+                            <p><strong>Applications Submitted:</strong> {{ user.applications.count }}</p>
+                        {% endif %}
+                        <p><strong>Last Login:</strong> {{ user.last_login|date:"F d, Y H:i"|default:"Never" }}</p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <a href="{% url 'edit_profile' %}" class="btn btn-primary">
+                        <i class="fa-solid fa-edit"></i> Edit Profile
+                    </a>
+                    {% if user.profile.role == 'employer' %}
+                        <a href="{% url 'employer_dashboard' %}" class="btn btn-success">
+                            <i class="fa-solid fa-dashboard"></i> Go to Dashboard
+                        </a>
+                    {% else %}
+                        <a href="{% url 'applicant_dashboard' %}" class="btn btn-info">
+                            <i class="fa-solid fa-dashboard"></i> Go to Dashboard
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,566 @@
+{% extends 'jobs/base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <!-- Hero Section -->
+    <div class="hero-section text-center mb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h1 class="hero-title animate__animated animate__fadeInUp">
+                    <i class="fa-solid fa-rocket text-primary"></i>
+                    Find Your Dream Job
+                </h1>
+                <p class="hero-subtitle animate__animated animate__fadeInUp animate__delay-1s">
+                    Discover amazing opportunities from top companies
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Search Section -->
+    <div class="search-section mb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="search-card">
+                    <form method="get" class="search-form">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-8">
+                                <div class="search-input-group">
+                                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                                    <input type="text" 
+                                           name="q" 
+                                           value="{{ query }}" 
+                                           placeholder="Search by job title, company, or location..."
+                                           class="form-control search-input">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary search-btn w-100">
+                                    <i class="fa-solid fa-search me-2"></i>
+                                    Search Jobs
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="results-summary mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h3 class="section-title">
+                    {% if query %}
+                        <i class="fa-solid fa-filter text-primary"></i>
+                        Search Results for "{{ query }}"
+                    {% else %}
+                        <i class="fa-solid fa-briefcase text-primary"></i>
+                        All Available Jobs
+                    {% endif %}
+                </h3>
+                <p class="results-count">
+                    <span class="badge bg-primary">{{ jobs|length }}</span> 
+                    job{{ jobs|length|pluralize }} found
+                </p>
+            </div>
+            <div class="col-md-6 text-end">
+                {% if query %}
+                    <a href="{% url 'job_list' %}" class="btn btn-outline-secondary">
+                        <i class="fa-solid fa-times me-2"></i>Clear Search
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Job Cards Grid -->
+    <div class="jobs-grid">
+        {% if jobs %}
+            <div class="row g-4">
+                {% for job in jobs %}
+                <div class="col-lg-6 col-xl-4">
+                    <div class="job-card animate__animated animate__fadeInUp job-card-{{ forloop.counter }}">
+                        <div class="job-card-header">
+                            <div class="company-avatar">
+                                <i class="fa-solid fa-building"></i>
+                            </div>
+                            <div class="job-meta">
+                                <span class="job-type-badge">
+                                    <i class="fa-solid fa-clock me-1"></i>Full Time
+                                </span>
+                                <span class="job-posted">
+                                    <i class="fa-solid fa-calendar me-1"></i>
+                                    {{ job.created_at|timesince }} ago
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="job-card-body">
+                            <h4 class="job-title">
+                                <a href="{% url 'job_detail' job.pk %}">{{ job.title }}</a>
+                            </h4>
+                            <div class="job-company">
+                                <i class="fa-solid fa-building me-2 text-primary"></i>
+                                {{ job.company_name }}
+                            </div>
+                            <div class="job-location">
+                                <i class="fa-solid fa-map-marker-alt me-2 text-success"></i>
+                                {{ job.location }}
+                            </div>
+                            <div class="job-description">
+                                {{ job.description|truncatewords:20 }}
+                            </div>
+                        </div>
+                        
+                        <div class="job-card-footer">
+                            <div class="job-actions">
+                                <a href="{% url 'job_detail' job.pk %}" class="btn btn-primary btn-sm">
+                                    <i class="fa-solid fa-eye me-2"></i>View Details
+                                </a>
+                                {% if user.is_authenticated and user.profile.role == "applicant" %}
+                                    <a href="{% url 'apply_job' job.pk %}" class="btn btn-outline-success btn-sm">
+                                        <i class="fa-solid fa-paper-plane me-2"></i>Apply Now
+                                    </a>
+                                {% endif %}
+                            </div>
+                            <div class="job-posted-by">
+                                <small class="text-muted">
+                                    <i class="fa-solid fa-user me-1"></i>
+                                    Posted by {{ job.posted_by.username }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-jobs-found">
+                <div class="row justify-content-center">
+                    <div class="col-md-6 text-center">
+                        <div class="no-jobs-illustration">
+                            <i class="fa-solid fa-search-minus"></i>
+                        </div>
+                        <h3>No Jobs Found</h3>
+                        <p class="text-muted">
+                            {% if query %}
+                                Sorry, we couldn't find any jobs matching "{{ query }}". 
+                                Try adjusting your search terms.
+                            {% else %}
+                                No jobs have been posted yet. Check back later!
+                            {% endif %}
+                        </p>
+                        {% if query %}
+                            <a href="{% url 'job_list' %}" class="btn btn-primary">
+                                <i class="fa-solid fa-refresh me-2"></i>View All Jobs
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Stats Section -->
+    {% if jobs %}
+    <div class="quick-stats mt-5">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="fa-solid fa-briefcase stat-icon"></i>
+                    <h4>{{ jobs|length }}</h4>
+                    <p>Available Jobs</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="fa-solid fa-building stat-icon"></i>
+                    <h4 id="company-count">{{ job_stats.companies|default:"0" }}</h4>
+                    <p>Companies</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="fa-solid fa-map-marker-alt stat-icon"></i>
+                    <h4 id="location-count">{{ job_stats.locations|default:"0" }}</h4>
+                    <p>Locations</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="fa-solid fa-users stat-icon"></i>
+                    <h4 id="recent-count">{{ job_stats.recent|default:"0" }}</h4>
+                    <p>This Week</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* Hero Section */
+.hero-section {
+    padding: 60px 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-radius: 20px;
+    margin-bottom: 40px;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-subtitle {
+    font-size: 1.3rem;
+    color: var(--text-light);
+    font-weight: 400;
+}
+
+/* Search Section */
+.search-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.search-input-group {
+    position: relative;
+}
+
+.search-icon {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary-color);
+    z-index: 10;
+}
+
+.search-input {
+    padding: 15px 20px 15px 50px;
+    border: 2px solid rgba(102, 126, 234, 0.1);
+    border-radius: 15px;
+    font-size: 1.1rem;
+    transition: var(--transition);
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.search-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    transform: translateY(-2px);
+}
+
+.search-btn {
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 15px;
+    background: var(--gradient-primary);
+    border: none;
+    transition: var(--transition);
+}
+
+.search-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Results Section */
+.section-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.results-count {
+    color: var(--text-light);
+    margin-bottom: 0;
+}
+
+/* Job Cards */
+.job-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 0;
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: var(--transition);
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.job-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Individual animation delays for each card */
+.job-card-1 { animation-delay: 0.1s; }
+.job-card-2 { animation-delay: 0.2s; }
+.job-card-3 { animation-delay: 0.3s; }
+.job-card-4 { animation-delay: 0.4s; }
+.job-card-5 { animation-delay: 0.5s; }
+.job-card-6 { animation-delay: 0.6s; }
+.job-card-7 { animation-delay: 0.7s; }
+.job-card-8 { animation-delay: 0.8s; }
+.job-card-9 { animation-delay: 0.9s; }
+
+.job-card-header {
+    padding: 20px 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.company-avatar {
+    width: 60px;
+    height: 60px;
+    background: var(--gradient-primary);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.job-meta {
+    text-align: right;
+}
+
+.job-type-badge {
+    background: rgba(102, 126, 234, 0.1);
+    color: var(--primary-color);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.job-posted {
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+.job-card-body {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+.job-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.job-title a {
+    color: var(--text-dark);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.job-title a:hover {
+    color: var(--primary-color);
+}
+
+.job-company, .job-location {
+    margin-bottom: 10px;
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.job-description {
+    color: var(--text-light);
+    line-height: 1.6;
+    margin-top: 15px;
+}
+
+.job-card-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    background: rgba(102, 126, 234, 0.02);
+}
+
+.job-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.job-actions .btn {
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.job-posted-by {
+    margin-top: 10px;
+}
+
+/* No Jobs Found */
+.no-jobs-found {
+    padding: 80px 0;
+}
+
+.no-jobs-illustration {
+    font-size: 5rem;
+    color: var(--primary-color);
+    margin-bottom: 30px;
+    opacity: 0.3;
+}
+
+/* Quick Stats */
+.quick-stats {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
+    padding: 40px 20px;
+    backdrop-filter: blur(10px);
+}
+
+.stat-card {
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.stat-card h4 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 5px;
+}
+
+.stat-card p {
+    color: var(--text-light);
+    font-weight: 500;
+    margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.1rem;
+    }
+    
+    .search-card {
+        padding: 20px;
+    }
+    
+    .job-actions {
+        flex-direction: column;
+    }
+    
+    .company-avatar {
+        width: 50px;
+        height: 50px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calculate stats from job data
+    function calculateStats() {
+        const jobs = {{ jobs|safe }};
+        if (jobs && jobs.length > 0) {
+            // Calculate unique companies
+            const companies = new Set();
+            const locations = new Set();
+            let recentJobs = 0;
+            
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            
+            {% for job in jobs %}
+                companies.add('{{ job.company_name|escapejs }}');
+                locations.add('{{ job.location|escapejs }}');
+                
+                const jobDate = new Date('{{ job.created_at|date:"c" }}');
+                if (jobDate >= oneWeekAgo) {
+                    recentJobs++;
+                }
+            {% endfor %}
+            
+            // Update the stats
+            document.getElementById('company-count').textContent = companies.size;
+            document.getElementById('location-count').textContent = locations.size;
+            document.getElementById('recent-count').textContent = recentJobs;
+        }
+    }
+
+    // Enhanced search functionality
+    const searchInput = document.querySelector('.search-input');
+    const searchForm = document.querySelector('.search-form');
+    
+    // Auto-search with debouncing
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            if (this.value.length >= 3 || this.value.length === 0) {
+                // Auto-submit form for real-time search (uncomment if needed)
+                // searchForm.submit();
+            }
+        }, 500);
+    });
+
+    // Add loading state to search button
+    searchForm.addEventListener('submit', function() {
+        const btn = this.querySelector('.search-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Searching...';
+        btn.disabled = true;
+        
+        // Re-enable after a delay (form will submit anyway)
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 1000);
+    });
+
+    // Add click tracking for job cards
+    const jobCards = document.querySelectorAll('.job-card');
+    jobCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (!e.target.closest('a, button')) {
+                const viewButton = this.querySelector('a[href*="job_detail"]');
+                if (viewButton) {
+                    viewButton.click();
+                }
+            }
+        });
+    });
+
+    // Calculate and display stats
+    calculateStats();
+
+    console.log('🎯 Job listings page initialized with {{ jobs|length }} jobs!');
+});
+</script>
+{% endblock %}

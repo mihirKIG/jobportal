@@ -1,0 +1,72 @@
+{% extends 'jobs/base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0"><i class="fa-solid fa-edit"></i> Edit Profile</h2>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="first_name" class="form-label">
+                            <i class="fa-solid fa-user"></i> First Name
+                        </label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" 
+                               value="{{ user.first_name }}" placeholder="Enter your first name">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="last_name" class="form-label">
+                            <i class="fa-solid fa-user"></i> Last Name
+                        </label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" 
+                               value="{{ user.last_name }}" placeholder="Enter your last name">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">
+                            <i class="fa-solid fa-envelope"></i> Email
+                        </label>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               value="{{ user.email }}" placeholder="Enter your email" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="role" class="form-label">
+                            <i class="fa-solid fa-briefcase"></i> Role
+                        </label>
+                        <select class="form-control" id="role" name="role">
+                            <option value="applicant" {% if user.profile.role == 'applicant' %}selected{% endif %}>
+                                Job Seeker
+                            </option>
+                            <option value="employer" {% if user.profile.role == 'employer' %}selected{% endif %}>
+                                Employer
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-save"></i> Save Changes
+                        </button>
+                        <a href="{% url 'user_profile' %}" class="btn btn-secondary">
+                            <i class="fa-solid fa-arrow-left"></i> Back to Profile
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

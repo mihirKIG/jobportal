@@ -1,0 +1,19 @@
+{% extends 'jobs/base.html' %}
+{% block content %}
+<h2>Applicants for {{ job.title }}</h2>
+<ul>
+    {% for application in applications %}
+    <li>
+        {{ application.applicant.username }} -
+        <a href="{{ application.resume.url }}">Resume</a>
+        <br>
+        Cover Letter: {{ application.cover_letter }}
+        <br>
+        Applied at: {{ application.applied_at|date:"Y-m-d H:i" }}
+    </li>
+    {% empty %}
+    <li>No applicants yet.</li>
+    {% endfor %}
+</ul>
+<a href="{% url 'employer_dashboard' %}">Back to Dashboard</a>
+{% endblock %}
